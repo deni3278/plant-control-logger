@@ -5,7 +5,7 @@ from adafruit_mcp3xxx.analog_in import AnalogIn
 import board
 
 
-class Hydro:
+class Soil:
     spi: busio.SPI
     cs: digitalio.DigitalInOut
     mcp: mcp.MCP3008
@@ -17,5 +17,8 @@ class Hydro:
         self.mcp = mcp.MCP3008(self.spi, self.cs)
         self.chan = AnalogIn(self.mcp, mcp.P0)
 
-    def measure(self) -> float:
+    def measure_voltage(self) -> float:
         return self.chan.voltage
+
+    def measure_value(self) -> int:
+        return self.chan.value
