@@ -6,7 +6,7 @@ import adafruit_am2320
 class Air:
     sensor: adafruit_am2320.AM2320
 
-    def setup(self):
+    def __init__(self):
         i2c = busio.I2C(board.SCL, board.SDA)
         self.sensor = adafruit_am2320.AM2320(i2c)
 
