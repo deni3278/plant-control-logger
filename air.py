@@ -1,17 +1,16 @@
-import busio
-import board
 import adafruit_am2320
+import board
+import busio
 
 
 class Air:
-    sensor: adafruit_am2320.AM2320
-
     def __init__(self):
-        i2c = busio.I2C(board.SCL, board.SDA)
-        self.sensor = adafruit_am2320.AM2320(i2c)
+        self.sensor = adafruit_am2320.AM2320(busio.I2C(board.SCL, board.SDA))
 
-    def measure_humidity(self) -> float:
+    @property
+    def humidity(self) -> float:
         return self.sensor.relative_humidity
 
-    def measure_temp(self) -> float:
+    @property
+    def temperature(self) -> float:
         return self.sensor.temperature
