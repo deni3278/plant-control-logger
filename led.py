@@ -1,35 +1,40 @@
-import RPi.GPIO as GPIO
+from gpiozero import PWMLED
 
 
 class Led:
-    __RED = 21
-    __GREEN = 26
+    __RED_PIN = 21
+    __GREEN_PIN = 26
 
     def __init__(self):
-        self.__red = False
-        self.__green = False
+        self.__red_led = PWMLED(self.__RED_PIN)
+        self.__green_led = PWMLED(self.__GREEN_PIN)
 
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.__RED, GPIO.OUT, initial=GPIO.LOW)
-        GPIO.setup(self.__GREEN, GPIO.OUT, initial=GPIO.LOW)
+    def set_red(self, value: float):
+        self.__red_led.value = value
 
-    def toggle_red(self, state: bool):
-        signal = GPIO.LOW if not state else GPIO.HIGH
-        GPIO.output(self.__RED, signal)
-        self.__red = state
+    def blink_red(self):
+        self.__red_led.blink(0.5, 0.5, 0, 0)
 
-    def toggle_green(self, state: bool):
-        signal = GPIO.LOW if not state else GPIO.HIGH
-        GPIO.output(self.__GREEN, signal)
-        self.__green = state
+    def stop_red(self):
+        self.__red_led.off()
+
+    def set_green(self, value: float):
+        self.__green_led.value = value
+
+    def blink_green(self):
+        self.__green_led.blink(0.5, 0.5, 0, 0)
+
+    def stop_green(self):
+        self.__green_led.off()
 
     def cleanup(self):
-        GPIO.cleanup([self.__RED, self.__GREEN])
+        self.__red_led.close()
+        self.__green_led.close()
 
     @property
-    def red(self):
-        return self.__red
+    def red_value(self):
+        return self.__red_led.value
 
     @property
-    def green(self):
-        return self.__green
+    def green_value(self):
+        return self.__green_led.value
