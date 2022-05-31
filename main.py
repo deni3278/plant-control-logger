@@ -17,7 +17,8 @@ def main(args):
         __config = ConfigParser()
         __config.optionxform = str
         __config.read_dict({'Logging': {
-            'Server': 'localhost',
+            'HubUrl': 'http://192.168.137.1:5191/hubs/logger',
+            'RestUrl': 'localhost',
             'Moist': 1.2,
             'Dry': 3.3
         }})

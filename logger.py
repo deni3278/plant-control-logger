@@ -1,12 +1,14 @@
-import time
+import logging
 from configparser import ConfigParser
 from air import Air
 from led import Led
 from soil import Soil
 from gpiozero import Button
 from signal import pause
+from signalrcore.hub.base_hub_connection import BaseHubConnection
+from signalrcore.hub_connection_builder import HubConnectionBuilder
 
-CONFIG_PATH = 'config.ini'
+CONFIG_PATH = './config.ini'
 
 
 class Logger:
@@ -19,13 +21,26 @@ class Logger:
         self.__led = Led()
         self.__button = Button(self.__BUTTON_PIN)
         self.__button.when_activated = lambda: self.log()
-
         self.__soil.moist = float(config['Logging']['Moist'])
         self.__soil.dry = float(config['Logging']['Dry'])
 
+        self.__hub_connection: BaseHubConnection = HubConnectionBuilder() \
+            .with_url(config['Logging']['HubUrl']) \
+            .configure_logging(logging.DEBUG) \
+            .build()
+
     def connect(self):
-        self.__led.blink_red()
-        self.__led.blink_green()
+        status = False
+
+        try:
+            status = self.__hub_connection.start()
+        except Exception as e:
+            print(e)
+
+        if status:
+            self.__led.blink_green()
+        else:
+            self.__led.blink_red()
 
         pause()
 
