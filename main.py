@@ -2,26 +2,37 @@
 
 import sys
 from configparser import ConfigParser
+from logger import Logger, CONFIG_PATH
 
-import logger
+
+__config: ConfigParser
+__instance: Logger
 
 
 def main(args):
+    global __config
+    global __instance
+
     try:
-        config = ConfigParser()
-        config.optionxform = str
-        config.read_dict({'Logging': {
-            'HubUrl': 'localhost',
+        __config = ConfigParser()
+        __config.optionxform = str
+        __config.read_dict({'Logging': {
+            'Server': 'localhost',
             'Moist': 1.2,
             'Dry': 3.3
         }})
 
-        config.read(logger.CONFIG_PATH)
+        __config.read(CONFIG_PATH)
 
-        instance = logger.Logger(config)
-        instance.connect()
+        __instance = Logger(__config)
+        __instance.connect()
     finally:
-        instance.led.cleanup()
+        if __instance is not None:
+            __instance.cleanup()
+
+        if __config is not None:
+            with open(CONFIG_PATH, 'w') as c:
+                __config.write(c)
 
 
 if __name__ == '__main__':

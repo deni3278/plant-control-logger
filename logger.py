@@ -13,27 +13,31 @@ class Logger:
     __BUTTON_PIN: int = 19
 
     def __init__(self, config: ConfigParser):
-        self.config = config
-        self.air = Air()
-        self.soil = Soil()
-        self.led = Led()
-        self.button = Button(self.__BUTTON_PIN)
-        self.button.when_activated = lambda: self.log()
+        self.__config = config
+        self.__air = Air()
+        self.__soil = Soil()
+        self.__led = Led()
+        self.__button = Button(self.__BUTTON_PIN)
+        self.__button.when_activated = lambda: self.log()
 
-        self.soil.moist = float(config['Logging']['Moist'])
-        self.soil.dry = float(config['Logging']['Dry'])
+        self.__soil.moist = float(config['Logging']['Moist'])
+        self.__soil.dry = float(config['Logging']['Dry'])
 
     def connect(self):
-        self.led.blink_red()
-        self.led.blink_green()
+        self.__led.blink_red()
+        self.__led.blink_green()
 
         pause()
 
     def log(self):
-        print('\n' + str(self.air.temperature) + ' C')
-        print(str(self.air.humidity) + ' %')
+        print('\n' + str(self.__air.temperature) + ' C')
+        print(str(self.__air.humidity) + ' %')
 
-        voltage = self.soil.voltage
+        voltage = self.__soil.voltage
 
         print(str(round(voltage, 2)) + ' V')
-        print(str(round(self.soil.normalize(voltage), 2)) + ' %')
+        print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
+
+    def cleanup(self):
+        self.__led.cleanup()
+        self.__button.close()
