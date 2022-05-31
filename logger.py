@@ -39,5 +39,6 @@ class Logger:
         print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
 
     def cleanup(self):
+        """Releases GPIO ports."""
         self.__led.cleanup()
         self.__button.close()
