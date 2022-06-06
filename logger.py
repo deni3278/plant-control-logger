@@ -34,6 +34,9 @@ class Logger:
 
         self.__hub_connection.on('SetConfig', lambda new: config.read_dict(new))
 
+    def __enter__(self):
+        return self
+
     def connect(self):
         status = False
 
@@ -58,7 +61,7 @@ class Logger:
         print(str(round(voltage, 2)) + ' V')
         print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         """Releases GPIO ports."""
         self.__led.cleanup()
         self.__button.close()

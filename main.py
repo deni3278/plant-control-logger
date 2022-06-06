@@ -16,10 +16,10 @@ def main(args):
         __config.optionxform = str
         __config.read_dict({
             'Logging': {
-                'Id': '',
+                'Id': 'test',
                 'Active': False,
-                'HubUrl': 'http://40.87.132.220:8093/hubs/logger',
-                'RestUrl': 'http://40.87.132.220:8092'
+                'HubUrl': 'http://40.87.132.220:9093/hubs/logger',
+                'RestUrl': 'http://40.87.132.220:9092'
             },
             'Air': {
                 'MinHumid': 0,
@@ -37,8 +37,6 @@ def main(args):
         if __config['Logging']['Id'] == '':
             print('Logger has not been set up with an id yet.')
             exit()
-
-        __instance = Logger(__config)
 
         with Logger(__config) as __instance:
             __instance.connect()
