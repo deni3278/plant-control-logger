@@ -18,8 +18,8 @@ def main(args):
             'Logging': {
                 'Id': '',
                 'Active': False,
-                'HubUrl': '',
-                'RestUrl': ''
+                'HubUrl': 'http://40.87.132.220:8093/hubs/logger',
+                'RestUrl': 'http://40.87.132.220:8092'
             },
             'Air': {
                 'MinHumid': 0,
