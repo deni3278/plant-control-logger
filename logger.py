@@ -1,12 +1,14 @@
 import logging
 from configparser import ConfigParser
+from signal import pause
+
+from gpiozero import Button
+from signalrcore.hub.base_hub_connection import BaseHubConnection
+from signalrcore.hub_connection_builder import HubConnectionBuilder
+
 from air import Air
 from led import Led
 from soil import Soil
-from gpiozero import Button
-from signal import pause
-from signalrcore.hub.base_hub_connection import BaseHubConnection
-from signalrcore.hub_connection_builder import HubConnectionBuilder
 
 CONFIG_PATH = './config.ini'
 
@@ -24,8 +26,12 @@ class Logger:
         self.__button = Button(self.__BUTTON_PIN)
         self.__button.when_activated = lambda: self.log()
 
-        self.__hub_connection: BaseHubConnection = HubConnectionBuilder().with_url(config['Logging']['HubUrl']).configure_logging(logging.DEBUG).build()
-        self.__hub_connection.on('GetConfig', lambda: self.__hub_connection.send("SendConfig", [{s: dict(config.items(s)) for s in config.sections()}]))
+        self.__hub_connection: BaseHubConnection = HubConnectionBuilder().with_url(
+            config['Logging']['HubUrl']).configure_logging(logging.DEBUG).build()
+
+        self.__hub_connection.on('GetConfig', lambda: self.__hub_connection.send("SendConfig", [
+            {s: dict(config.items(s)) for s in config.sections()}]))
+
         self.__hub_connection.on('SetConfig', lambda new: config.read_dict(new))
 
     def connect(self):

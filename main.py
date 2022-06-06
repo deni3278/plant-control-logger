@@ -2,6 +2,7 @@
 
 import sys
 from configparser import ConfigParser
+
 from logger import Logger, CONFIG_PATH
 
 __config: ConfigParser

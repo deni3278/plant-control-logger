@@ -1,8 +1,9 @@
+from configparser import ConfigParser
+
 import adafruit_mcp3xxx.mcp3008 as mcp
 import board
 import busio
 import digitalio
-from configparser import ConfigParser
 from adafruit_mcp3xxx.analog_in import AnalogIn
 
 
