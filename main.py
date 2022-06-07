@@ -16,7 +16,8 @@ def main(args):
         __config.optionxform = str
         __config.read_dict({
             'Logging': {
-                'Id': 'test',
+                'LoggerId': '',
+                'PairingId': '',
                 'Active': False,
                 'HubUrl': 'http://40.87.132.220:9093/hubs/logger',
                 'RestUrl': 'http://40.87.132.220:9092'
