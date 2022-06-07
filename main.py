@@ -35,7 +35,7 @@ def main(args):
 
         __config.read(CONFIG_PATH)
 
-        if __config['Logging']['Id'] == '':
+        if __config['Logging']['LoggerId'] == '':
             print('Logger has not been set up with an id yet.')
             exit()
 
