@@ -6,6 +6,7 @@ from gpiozero import Button
 from signalrcore.hub.base_hub_connection import BaseHubConnection
 from signalrcore.hub_connection_builder import HubConnectionBuilder
 
+import util
 from air import Air
 from led import Led
 from soil import Soil
@@ -27,7 +28,7 @@ class Logger:
         self.__button.when_activated = lambda: self.log()
 
         self.__hub_connection: BaseHubConnection = HubConnectionBuilder().with_url(
-            config['Logging']['HubUrl']).configure_logging(logging.DEBUG).build()
+            'http://192.168.137.1:5140/hubs/logger').configure_logging(logging.DEBUG).build()
 
         self.__hub_connection.on('GetConfig', lambda: self.__hub_connection.send("SendConfig", [
             {s: dict(config.items(s)) for s in config.sections()}]))
@@ -38,17 +39,21 @@ class Logger:
         return self
 
     def connect(self):
-        status = False
+        def on_open():
+            util.send(self.__hub_connection, 'ConnectLogger', ['test'], lambda: self.__led.blink_green(), lambda: self.__led.blink_red())
+
+        def on_error():
+            print('Something went wrong.')
+            self.__led.stop_green()
+            self.__led.blink_red()
 
         try:
-            status = self.__hub_connection.start()
+            self.__hub_connection.start()
+            self.__hub_connection.on_open(on_open)
+            self.__hub_connection.on_error(on_error)
         except Exception as e:
             print(e)
-
-        if status:
-            self.__led.blink_green()
-        else:
-            self.__led.blink_red()
+            on_error()
 
         pause()
 
@@ -60,6 +65,10 @@ class Logger:
 
         print(str(round(voltage, 2)) + ' V')
         print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
+
+    def start_loop(self):
+        self.__led.blink_green()
+        self.log()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Releases GPIO ports."""
