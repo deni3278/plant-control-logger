@@ -1,4 +1,6 @@
 import logging
+import threading
+import timeit
 from configparser import ConfigParser
 from signal import pause
 
@@ -27,8 +29,10 @@ class Logger:
         self.__button = Button(self.__BUTTON_PIN)
         self.__button.when_activated = lambda: self.log()
 
-        self.__hub_connection: BaseHubConnection = HubConnectionBuilder().with_url(
-            'http://192.168.137.1:5140/hubs/logger').configure_logging(logging.DEBUG).build()
+        self.__hub_connection: BaseHubConnection = HubConnectionBuilder() \
+            .with_url('ws://192.168.137.1:5140/hubs/logger') \
+            .configure_logging(logging.DEBUG) \
+            .build()
 
         self.__hub_connection.on('GetConfig', lambda: self.__hub_connection.send("SendConfig", [
             {s: dict(config.items(s)) for s in config.sections()}]))
@@ -40,11 +44,9 @@ class Logger:
 
     def connect(self):
         def on_open():
-            util.send(self.__hub_connection, 'ConnectLogger', ['test'], lambda: self.__led.blink_green(), lambda: self.__led.blink_red())
+            util.send(self.__hub_connection, 'ConnectLogger', ['test'], lambda result: self.__start_timer(), lambda: self.__led.blink_red())
 
         def on_error():
-            print('Something went wrong.')
-            self.__led.stop_green()
             self.__led.blink_red()
 
         try:
@@ -53,7 +55,6 @@ class Logger:
             self.__hub_connection.on_error(on_error)
         except Exception as e:
             print(e)
-            on_error()
 
         pause()
 
@@ -66,9 +67,10 @@ class Logger:
         print(str(round(voltage, 2)) + ' V')
         print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
 
-    def start_loop(self):
+    def __start_timer(self):
         self.__led.blink_green()
-        self.log()
+        timer = threading.Timer(10, self.log)
+        timer.start()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Releases GPIO ports."""

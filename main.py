@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import asyncio
 import sys
 from configparser import ConfigParser
 
@@ -8,7 +8,7 @@ from logger import Logger, CONFIG_PATH
 __config: ConfigParser
 
 
-def main(args):
+async def main(args):
     global __config
 
     try:
@@ -19,7 +19,7 @@ def main(args):
                 'LoggerId': '',
                 'PairingId': '',
                 'Active': False,
-                'HubUrl': 'http://40.87.132.220:9093/hubs/logger',
+                'HubUrl': 'ws://40.87.132.220:9093/hubs/logger',
                 'RestUrl': 'http://40.87.132.220:9092'
             },
             'Air': {
@@ -47,4 +47,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    asyncio.run(main(sys.argv))
