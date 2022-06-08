@@ -1,6 +1,5 @@
 import logging
 import threading
-import timeit
 from configparser import ConfigParser
 from signal import pause
 
