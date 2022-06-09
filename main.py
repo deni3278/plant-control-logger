@@ -1,30 +1,11 @@
 #!/usr/bin/env python3
-import asyncio
 import sys
 from configparser import ConfigParser
 
 import requests
 
+import logger
 from logger import Logger, CONFIG_PATH
-
-default_config = {
-    'Logging': {
-        'LoggerId': '',
-        'PairingId': '',
-        'Active': False,
-        'SocketUrl': '40.87.132.220:9093',
-        'RestUrl': '40.87.132.220:9092'
-    },
-    'Air': {
-        'MinHumid': 1,
-        'MaxHumid': 1,
-        'MinTemp': 1,
-        'MaxTemp': 1
-    },
-    'Soil': {
-        'Moist': 1.2,
-        'Dry': 3.3
-    }}
 
 __config: ConfigParser
 
@@ -65,8 +46,7 @@ async def main(args):
         with Logger(__config) as __instance:
             __instance.connect()
     finally:
-        with open(CONFIG_PATH, 'w') as c:
-            __config.write(c)
+        logger.save(__config, CONFIG_PATH)
 
 
 def check_connection():
@@ -84,4 +64,4 @@ def check_connection():
 
 
 if __name__ == '__main__':
-    asyncio.run(main(sys.argv))
+    main(sys.argv)

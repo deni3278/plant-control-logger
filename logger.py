@@ -15,6 +15,33 @@ from soil import Soil
 CONFIG_PATH = './config.ini'
 
 
+def read(config: ConfigParser) -> dict:
+    return {
+        'Logging': {
+            'LoggerId': config.get('Logging', 'LoggerId'),
+            'PairingId': config.get('Logging', 'PairingId'),
+            'Active': config.getboolean('Logging', 'Active'),
+            'SocketUrl': config.get('Logging', 'SocketUrl'),
+            'RestUrl': config.get('Logging', 'RestUrl')
+        },
+        'Air': {
+            'MinHumid': config.getfloat('Air', 'MinHumid'),
+            'MaxHumid': config.getfloat('Air', 'MaxHumid'),
+            'MinTemp': config.getfloat('Air', 'MinTemp'),
+            'MaxTemp': config.getfloat('Air', 'MaxTemp')
+        },
+        'Soil': {
+            'Moist': config.getfloat('Soil', 'Moist'),
+            'Dry': config.getfloat('Soil', 'Dry')
+        }
+    }
+
+
+def save(config: ConfigParser, path: str):
+    with open(path, 'w') as c:
+        config.write(c)
+
+
 class Logger:
     __BUTTON_PIN: int = 19
 
@@ -29,11 +56,12 @@ class Logger:
         self.__button.when_activated = lambda: self.log()
 
         self.__hub_connection: BaseHubConnection = HubConnectionBuilder() \
-            .with_url('ws://192.168.137.1:5140/hubs/logger') \
+            .with_url('ws://' + self.__config.get('Logging', 'SocketUrl') + '/hubs/logger') \
             .configure_logging(logging.DEBUG) \
             .build()
 
-        self.__hub_connection.on('GetConfig', lambda message: util.send(self.__hub_connection, 'SendConfig', [{s: dict(self.__config.items(s)) for s in self.__config.sections()}], lambda result: print(result), lambda: print('dude wtf?')))
+        self.__hub_connection.on('GetConfig', lambda message: util.send(self.__hub_connection, 'SendConfig', [
+            {s: dict(self.__config.items(s)) for s in self.__config.sections()}]))
 
         self.__hub_connection.on('SetConfig', lambda new: config.read_dict(new))
 
@@ -42,9 +70,10 @@ class Logger:
 
     def connect(self):
         def on_open():
-            util.send(self.__hub_connection, 'ConnectLogger', ['test'], lambda result: self.__start_timer() if result else exit(), lambda: self.__led.blink_red())
+            util.send(self.__hub_connection, 'ConnectLogger', ['test'],
+                      lambda result: self.__start_timer() if result else exit(), lambda: self.__led.blink_red())
 
-            util.send(self.__hub_connection, 'SendConfig', [{s: dict(self.__config.items(s)) for s in self.__config.sections()}], lambda result: print(result), lambda: print('dude wtf?'))
+            util.send(self.__hub_connection, 'SendConfig', [read(self.__config)])
 
         def on_error():
             self.__led.blink_red()
