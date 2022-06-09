@@ -33,8 +33,7 @@ class Logger:
             .configure_logging(logging.DEBUG) \
             .build()
 
-        self.__hub_connection.on('GetConfig', lambda: self.__hub_connection.send("SendConfig", [
-            {s: dict(config.items(s)) for s in config.sections()}]))
+        self.__hub_connection.on('GetConfig', lambda message: util.send(self.__hub_connection, 'SendConfig', [{s: dict(self.__config.items(s)) for s in self.__config.sections()}], lambda result: print(result), lambda: print('dude wtf?')))
 
         self.__hub_connection.on('SetConfig', lambda new: config.read_dict(new))
 
@@ -43,7 +42,9 @@ class Logger:
 
     def connect(self):
         def on_open():
-            util.send(self.__hub_connection, 'ConnectLogger', ['test'], lambda result: self.__start_timer(), lambda: self.__led.blink_red())
+            util.send(self.__hub_connection, 'ConnectLogger', ['test'], lambda result: self.__start_timer() if result else exit(), lambda: self.__led.blink_red())
+
+            util.send(self.__hub_connection, 'SendConfig', [{s: dict(self.__config.items(s)) for s in self.__config.sections()}], lambda result: print(result), lambda: print('dude wtf?'))
 
         def on_error():
             self.__led.blink_red()
@@ -58,7 +59,7 @@ class Logger:
         pause()
 
     def log(self):
-        print('\n' + str(self.__air.temperature) + ' C')
+        print(str(self.__air.temperature) + ' C')
         print(str(self.__air.humidity) + ' %')
 
         voltage = self.__soil.voltage
@@ -68,8 +69,17 @@ class Logger:
 
     def __start_timer(self):
         self.__led.blink_green()
-        timer = threading.Timer(10, self.log)
+        timer = threading.Timer(10, self.__tick)
         timer.start()
+
+    def __tick(self):
+        if self.__config.getboolean('Logging', 'Active'):
+            self.__led.stop_red()
+            self.__led.set_green(1)
+            self.log()
+        else:
+            self.__led.stop_green()
+            self.__led.set_red(1)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Releases GPIO ports."""
