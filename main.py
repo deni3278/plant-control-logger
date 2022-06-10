@@ -21,8 +21,8 @@ async def main(args):
                 'LoggerId': '',
                 'PairingId': '',
                 'Active': False,
-                'SocketUrl': '40.87.132.220:9093',
-                'RestUrl': '40.87.132.220:9092'
+                'SocketUrl': '20.4.59.10:9093',
+                'RestUrl': '20.4.59.10:9092'
             },
             'Air': {
                 'MinHumid': 1,
