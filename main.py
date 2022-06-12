@@ -14,7 +14,7 @@ def main(args):
     global __config
 
     try:
-        __config = ConfigParser()
+        __config = ConfigParser(allow_no_value=True)
         __config.optionxform = str
         __config.read_dict({
             'Logging': {

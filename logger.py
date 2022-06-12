@@ -64,7 +64,7 @@ class Logger:
         self.__hub_connection.on('GetConfig', lambda message: util.send(self.__hub_connection, 'SendConfig', [
             read(self.__config)]))
 
-        self.__hub_connection.on('SetConfig', print)
+        self.__hub_connection.on('SetConfig', self.__save_config)
 
     def __enter__(self):
         return self
@@ -89,18 +89,20 @@ class Logger:
         pause()
 
     def log(self):
-        print(str(self.__air.temperature) + ' C')
-        print(str(self.__air.humidity) + ' %')
+        try:
+            print(str(self.__air.temperature) + ' C')
+            print(str(self.__air.humidity) + ' %')
 
-        voltage = self.__soil.voltage
+            voltage = self.__soil.voltage
 
-        print(str(round(voltage, 2)) + ' V')
-        print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
+            print(str(round(voltage, 2)) + ' V')
+            print(str(round(self.__soil.normalize(voltage), 2)) + ' %')
+        except Exception as e:
+            print(e)
 
     def __start_timer(self):
-        self.__led.blink_green()
-        timer = threading.Timer(10, self.__tick)
-        timer.start()
+        self.__timer = threading.Timer(10, self.__tick)
+        self.__timer.start()
 
     def __tick(self):
         if self.__config.getboolean('Logging', 'Active'):
@@ -111,9 +113,10 @@ class Logger:
             self.__led.stop_green()
             self.__led.set_red(1)
 
+        self.__start_timer()
+
     def __save_config(self, new):
-        self.__config.read_dict(json.loads(new))
-        print(str(json.loads(new)))
+        self.__config.read_dict(new[0])
 
         with open(CONFIG_PATH, 'w') as f:
             self.__config.write(f)
