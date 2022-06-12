@@ -10,7 +10,7 @@ from logger import Logger, CONFIG_PATH
 __config: ConfigParser
 
 
-async def main(args):
+def main(args):
     global __config
 
     try:
