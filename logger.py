@@ -12,7 +12,7 @@ from air import Air
 from led import Led
 from soil import Soil
 
-CONFIG_PATH = './config.ini'
+CONFIG_PATH = 'config.ini'
 
 
 def read(config: ConfigParser) -> dict:
