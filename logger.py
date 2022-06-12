@@ -1,3 +1,4 @@
+import json
 import logging
 import threading
 from configparser import ConfigParser
@@ -61,16 +62,16 @@ class Logger:
             .build()
 
         self.__hub_connection.on('GetConfig', lambda message: util.send(self.__hub_connection, 'SendConfig', [
-            {s: dict(self.__config.items(s)) for s in self.__config.sections()}]))
+            read(self.__config)]))
 
-        self.__hub_connection.on('SetConfig', lambda new: config.read_dict(new))
+        self.__hub_connection.on('SetConfig', print)
 
     def __enter__(self):
         return self
 
     def connect(self):
         def on_open():
-            util.send(self.__hub_connection, 'ConnectLogger', ['test'],
+            util.send(self.__hub_connection, 'ConnectLogger', [self.__config.get('Logging', 'LoggerId')],
                       lambda result: self.__start_timer() if result else exit(), lambda: self.__led.blink_red())
 
             util.send(self.__hub_connection, 'SendConfig', [read(self.__config)])
@@ -109,6 +110,13 @@ class Logger:
         else:
             self.__led.stop_green()
             self.__led.set_red(1)
+
+    def __save_config(self, new):
+        self.__config.read_dict(json.loads(new))
+        print(str(json.loads(new)))
+
+        with open(CONFIG_PATH, 'w') as f:
+            self.__config.write(f)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Releases GPIO ports."""
