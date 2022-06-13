@@ -8,14 +8,23 @@ from adafruit_mcp3xxx.analog_in import AnalogIn
 
 
 class MCP3008:
-    def __init__(self, config: ConfigParser):
-        self.__config = config
+    def __init__(self):
+        print('Initializing MCP3008')
+
         self.__chan = AnalogIn(mcp.MCP3008(busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI),
                                            digitalio.DigitalInOut(board.CE0)), mcp.P0)
 
-    @property
-    def moisture(self) -> float:
-        moist = float(self.__config['Soil']['Moist'])
-        dry = float(self.__config['Soil']['Dry'])
+    def moisture(self, config: ConfigParser) -> float:
+        moist = float(config['Soil']['Moist'])
+        dry = float(config['Soil']['Dry'])
 
-        return 100.0 - (self.__chan.voltage - moist) / (dry - moist) * 100.0
+        if moist == dry:
+            return float('nan')
+
+        percentage = 100.0 - (self.__chan.voltage - moist) / (dry - moist) * 100.0
+
+        return max(0.0, min(percentage, 1.0))
+
+    @property
+    def voltage(self):
+        return self.__chan.voltage

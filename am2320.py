@@ -5,6 +5,8 @@ import busio
 
 class AM2320:
     def __init__(self):
+        print('Initializing AM2320')
+
         self.sensor = adafruit_am2320.AM2320(busio.I2C(board.SCL, board.SDA))
 
     @property
