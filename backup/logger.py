@@ -1,4 +1,3 @@
-import json
 import logging
 import threading
 from configparser import ConfigParser
