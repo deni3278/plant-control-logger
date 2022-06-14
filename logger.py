@@ -13,8 +13,13 @@ from mcp3008 import MCP3008
 
 
 class Logger:
-    __BLINK = 0.1
-    __INTERVAL = 60
+    """
+    Represents the physical data logger and its sensors.
+
+    Contains methods for logging and handling SignalR hub methods.
+    """
+    __BLINK = 0.1       # The off and on time when blinking an LED
+    __INTERVAL = 60     # How often to log in seconds
 
     def __init__(self, config: ConfigParser):
         """
@@ -29,11 +34,11 @@ class Logger:
         """
         self.__config = config
 
-        self.__am2320 = AM2320()
-        self.__mcp3008 = MCP3008()
-        self.__gpio = GPIO()
+        self.__am2320 = AM2320()    # Initialize the AM2320 sensor
+        self.__mcp3008 = MCP3008()  # Initialize the MCP3008 converter
+        self.__gpio = GPIO()        # Initialize the relevant GPIOs
 
-        self.__ping()
+        self.__ping()  # Ping until a response is received from both backend servers before continuing
 
         self.__connection: BaseHubConnection = HubConnectionBuilder() \
             .with_url('ws://' + self.__config.get('Logging', 'SocketUrl') + '/hubs/logger') \
@@ -43,6 +48,8 @@ class Logger:
                 'reconnect_interval': 5
             }).build()
 
+        # Register SignalR hub method handlers
+
         self.__connection.on_open(self.__on_open)
         self.__connection.on_reconnect(lambda: self.__gpio.blink_red(self.__BLINK))
         self.__connection.on_close(self.__on_close)
@@ -51,22 +58,32 @@ class Logger:
         self.__connection.on('SetConfig', lambda args: self.__on_set_config(args[0]))
         self.__connection.on('SetPairingId', lambda args: self.__on_set_pairing_id(args[0]))
         self.__connection.on('Calibrate', lambda args: self.__on_calibrate(args[0]))
+
         self.__connect()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Cleans up the used GPIOs.
+        """
         print('Cleaning up resources')
 
         self.__gpio.close()
 
     def __log(self):
+        """
+        Logs the air temperature and humidity, and soil moisture.
+
+        The data is sent to the database via REST API through a POST request.
+        If the request times out, it will ping the backend until a response is received before continuing.
+        """
         print('Logging')
 
         pairing_id = self.__config.get('Logging', 'PairingId')
-        temp = str(self.__am2320.temperature)
-        humidity = self.__am2320.humidity
+        temp = round(self.__am2320.temperature, 2)
+        humidity = round(self.__am2320.humidity, 2)
         moisture = round(self.__mcp3008.moisture(self.__config), 2)
 
         rest: str = 'http://' + self.__config.get('Logging', 'RestUrl') + '/logs'
@@ -84,24 +101,32 @@ class Logger:
             print('Timed out posting log')
 
             try:
+                # Servers might be down, therefore ping until they're up again before continuing
+
                 self.__timer.cancel()
                 self.__ping()
                 self.__tick()
-            except AttributeError:
+            except AttributeError:  # AttributeError would occur in case the timer hasn't been instantiated yet
                 pass
         except requests.exceptions.InvalidURL:
             sys.exit('Invalid URL from config.ini')
 
     def __tick(self):
+        """
+        Represents a single tick in the main loop.
+
+        The method runs itself at a self interval using a ``Timer``.
+        Calls the ``__log`` method.
+        """
         print('Tick')
 
         if self.__config.getboolean('Logging', 'Active'):
-            self.__gpio.set_green(1.0)
+            self.__gpio.set_green(1.0)  # Set green LED to be solid green
             self.__log()
         else:
-            self.__gpio.set_red(1.0)
+            self.__gpio.set_red(1.0)  # Set red LED to be solid red
 
-        self.__timer = Timer(self.__INTERVAL, self.__tick)
+        self.__timer = Timer(self.__INTERVAL, self.__tick)  # Call this method after the set interval
         self.__timer.start()
 
     def __on_calibrate(self, calibration_type: str):
@@ -214,6 +239,11 @@ class Logger:
             pass
 
     def __on_close(self):
+        """
+        Handler for when the hub connection is closed.
+
+        Cancels the main loop, if it's running, and attempts to connect again.
+        """
         print('Connection closed to backend')
 
         try:
@@ -224,12 +254,20 @@ class Logger:
         self.__connect()
 
     def __connect(self):
+        """
+        Starts blinking the green LED and starts connecting to the SignalR hub.
+        """
         print('Connecting to backend')
 
         self.__gpio.blink_green(self.__BLINK)
         self.__connection.start()
 
     def __save(self):
+        """
+        Notifies SignalR listeners of current config and saves to the config.ini file.
+
+        The ``ConfigParser`` instance is converted to a ``dict``.
+        """
         print('Saving config')
 
         try:
@@ -241,6 +279,12 @@ class Logger:
             self.__config.write(f)
 
     def __ping(self):
+        """
+        Loops until a response is received from pinging both of the backend servers.
+
+        Starts blinking red if a request times out.
+        The program is exited in case the URLs from the config are invalid.
+        """
         connection: bool = False
         socket: str = 'http://' + self.__config.get('Logging', 'SocketUrl') + '/'
         rest: str = 'http://' + self.__config.get('Logging', 'RestUrl') + '/'
