@@ -1,46 +1,78 @@
+import atexit
+import logging
 import os
 from configparser import ConfigParser
 
-PATH = os.path.abspath(os.path.dirname(__file__)) + '/config.ini'
 
-CONFIG = {
-    'Logging': {
-        'LoggerId': '',
-        'PairingId': '',
-        'Active': False,
-        'SocketUrl': '20.4.59.10:9093',
-        'RestUrl': '20.4.59.10:9092'
-    },
-    'Air': {
-        'MinHumid': 1,
-        'MaxHumid': 1,
-        'MinTemp': 1,
-        'MaxTemp': 1
-    },
-    'Soil': {
-        'Moist': 1.2,
-        'Dry': 3.3
-    }
-}
-
-
-def to_dict(config: ConfigParser) -> dict:
-    return {
+class Config(ConfigParser):
+    _DEFAULTS = {
         'Logging': {
-            'LoggerId': config.get('Logging', 'LoggerId'),
-            'PairingId': config.get('Logging', 'PairingId'),
-            'Active': config.getboolean('Logging', 'Active'),
-            'SocketUrl': config.get('Logging', 'SocketUrl'),
-            'RestUrl': config.get('Logging', 'RestUrl')
+            'LoggerId': str(),
+            'PairingId': str(),
+            'Active': bool(),
+            'SocketUrl': str(),
+            'RestUrl': str()
         },
         'Air': {
-            'MinHumid': config.getfloat('Air', 'MinHumid'),
-            'MaxHumid': config.getfloat('Air', 'MaxHumid'),
-            'MinTemp': config.getfloat('Air', 'MinTemp'),
-            'MaxTemp': config.getfloat('Air', 'MaxTemp')
+            'MinHumid': float(),
+            'MaxHumid': float(),
+            'MinTemp': float(),
+            'MaxTemp': float()
         },
         'Soil': {
-            'Moist': config.getfloat('Soil', 'Moist'),
-            'Dry': config.getfloat('Soil', 'Dry')
+            'Moist': float(),
+            'Dry': float()
         }
     }
+
+    def __init__(self, path: str = None):
+        super().__init__(allow_no_value=True)
+        self.optionxform = str
+        self._path = path or os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
+
+        self.read_dict(self._DEFAULTS)
+        files = self.read(self._path)
+
+        if len(files) == 0:
+            self.save()
+        else:
+            self.clean()
+
+        atexit.register(self.save)
+
+    def save(self):
+        self.clean()
+
+        with open(self._path, 'w') as f:
+            self.write(f)
+
+        logging.info('Saved configuration options to \'{0}\'.'.format(self._path))
+
+    def clean(self):
+        for section in self.sections():
+            if section not in self._DEFAULTS:
+                self.remove_section(section)
+            else:
+                for option in self.options(section):
+                    if option not in self._DEFAULTS[section]:
+                        self.remove_option(section, option)
+
+    def to_dict(self) -> dict:
+        # noinspection PyShadowingNames
+        def get_value(value, section: str, option: str):
+            if type(value) == str:
+                return self.get(section, option) or str()
+            elif type(value) == bool:
+                return self.getboolean(section, option) or bool()
+            elif type(value) == float:
+                return self.getfloat(section, option) or float()
+            elif type(value) == int:
+                return self.getint(section, option) or int()
+
+        output = dict(self._DEFAULTS)
+
+        for section in output:
+            for option in output[section]:
+                output[section][option] = get_value(output[section][option], section, option)
+
+        return output

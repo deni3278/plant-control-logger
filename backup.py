@@ -3,13 +3,12 @@ from configparser import ConfigParser
 from threading import Timer
 
 import requests
-from signalrcore.hub.base_hub_connection import BaseHubConnection
-from signalrcore.hub_connection_builder import HubConnectionBuilder
-
 from am2320 import AM2320
-from config import to_dict, PATH
+from configur import to_dict, PATH
 from gpio import GPIO
 from mcp3008 import MCP3008
+from signalrcore.hub.base_hub_connection import BaseHubConnection
+from signalrcore.hub_connection_builder import HubConnectionBuilder
 
 
 class Logger:
@@ -18,8 +17,8 @@ class Logger:
 
     Contains methods for logging and handling SignalR hub methods.
     """
-    __BLINK = 0.1       # The off and on time when blinking an LED
-    __INTERVAL = 60     # How often to log in seconds
+    __BLINK = 0.1  # The off and on time when blinking an LED
+    __INTERVAL = 60  # How often to log in seconds
 
     def __init__(self, config: ConfigParser):
         """
@@ -34,19 +33,19 @@ class Logger:
         """
         self.__config = config
 
-        self.__am2320 = AM2320()    # Initialize the AM2320 sensor
+        self.__am2320 = AM2320()  # Initialize the AM2320 sensor
         self.__mcp3008 = MCP3008()  # Initialize the MCP3008 converter
-        self.__gpio = GPIO()        # Initialize the relevant GPIOs
+        self.__gpio = GPIO()  # Initialize the relevant GPIOs
 
         self.__ping()  # Ping until a response is received from both backend servers before continuing
 
         self.__connection: BaseHubConnection = HubConnectionBuilder() \
             .with_url('ws://' + self.__config.get('Logging', 'SocketUrl') + '/hubs/logger') \
             .with_automatic_reconnect({
-                'type': 'raw',
-                'keep_alive_interval': 10,
-                'reconnect_interval': 5
-            }).build()
+            'type': 'raw',
+            'keep_alive_interval': 10,
+            'reconnect_interval': 5
+        }).build()
 
         # Register SignalR hub method handlers
 
