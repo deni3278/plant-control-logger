@@ -38,4 +38,4 @@ def cleanup():
     _red.close()
 
 
-atexit.register(cleanup)
+atexit.register(cleanup)    # Register the cleanup method as a handler for when the script is exiting.

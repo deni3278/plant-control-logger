@@ -17,7 +17,7 @@ from config import Config
 
 logging.basicConfig(level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S', format='%(asctime)s - %(levelname)s: %(message)s')
 
-_INTERVAL = 10
+_INTERVAL = 10  # Number of seconds between iterations in the main loop.
 
 _config = Config()
 
@@ -25,7 +25,7 @@ if len(_config.get('Logging', 'LoggerId')) == 0:
     sys.exit('Logger has not been registered with an ID.')
 
 # noinspection PyTypeChecker
-_timer: threading.Timer = None
+_timer: threading.Timer = None  # Globally defined for use in several functions.
 
 _connection: BaseHubConnection = HubConnectionBuilder() \
     .with_url(os.path.join('ws://', _config.get('Logging', 'SocketUrl'), 'hubs', 'logger')) \
@@ -42,7 +42,7 @@ def _log():
     url: str = os.path.join('http://', _config.get('Logging', 'RestUrl'), 'logs')
 
     if isnan(moisture):
-        logging.warning('Moist and dry threshold values must be different from each other.')
+        logging.warning('Moist and dry threshold values must be different from each other.')    # Avoids division by zero.
 
         return
 
@@ -61,12 +61,12 @@ def _log():
         led.blink_red()
 
         if _timer and _timer.is_alive():
-            _timer.cancel()
+            _timer.cancel()     # Stop the main loop to avoid multiple threads pinging at the same time.
 
         _ping(url)
 
-        if _timer:
-            _on_tick()
+        if _timer:      # Only if the main loop has been started previously.
+            _on_tick()  # Resume the main loop after a response is received.
 
 
 def _ping(url: str):
@@ -98,13 +98,13 @@ def _on_open():
         if message.result:
             logging.info('Successfully authenticated.')
 
-            _on_tick()
+            _on_tick()  # Start main loop.
         else:
             logging.critical('A logger is already connected with the same ID')
 
             sys.exit()
 
-    _connection.send('ConnectLogger', [_config.get('Logging', 'LoggerId')], on_response)
+    _connection.send('ConnectLogger', [_config.get('Logging', 'LoggerId')], on_response)    # Authenticate to the SignalR hub.
 
 
 def _on_close():
@@ -118,15 +118,11 @@ def _on_error(message: CompletionMessage):
 def _on_get_config():
     logging.info('Received a \'GetConfig\' message.')
 
-    print(_config.to_dict())
-
     _connection.send('SendConfig', [_config.to_dict()])
 
 
 def _on_set_config(new: dict):
     logging.info('Received a \'SetConfig\' message.')
-
-    print(new)
 
     _config.read_dict(new)
     _config.save()
@@ -170,14 +166,14 @@ def _on_tick():
     if _config.getboolean('Logging', 'Active'):
         led.set_green(1)
 
-        if _config.get('Logging', 'PairingId') and len(_config.get('Logging', 'PairingId')) > 0:
+        if len(_config.get('Logging', 'PairingId')) > 0:    # Only log if the logger has been paired with a plant.
             _log()
         else:
             logging.warning('Logger is not paired.')
     else:
         led.set_red(1)
 
-    _timer = threading.Timer(_INTERVAL, _on_tick)
+    _timer = threading.Timer(_INTERVAL, _on_tick)   # Calls the same function, _on_tick, causing a loop.
     _timer.start()
 
 
@@ -198,6 +194,7 @@ try:
     logging.info('Connecting to hub.')
 
     _connection.start()
-    signal.pause()
+
+    signal.pause()  # Unix only function that causes the process to sleep and, in this case, keeping the script alive.
 except KeyboardInterrupt:
     sys.exit()

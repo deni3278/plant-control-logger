@@ -10,10 +10,10 @@ _channel = AnalogIn(mcp.MCP3008(busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI
 
 
 def moisture(moist: float, dry: float) -> float:
-    if moist == dry:
+    if moist == dry:    # Avoids division by zero.
         return float('nan')
 
-    percentage = 100 - (voltage() - moist) / (dry - moist) * 100
+    percentage = 100 - (voltage() - moist) / (dry - moist) * 100    # Converts the voltage to a percentage based on the configured threshold values.
 
     return round(max(0.0, min(percentage, 1.0)), 2)
 

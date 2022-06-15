@@ -27,18 +27,18 @@ class Config(ConfigParser):
 
     def __init__(self, path: str = None):
         super().__init__(allow_no_value=True)
-        self.optionxform = str
+        self.optionxform = str  # Ensures that options are written to a file case sensitively.
         self._path = path or os.path.abspath(os.path.join(os.path.dirname(__file__), 'config.ini'))
 
         self.read_dict(self._DEFAULTS)
         files = self.read(self._path)
 
         if len(files) == 0:
-            self.save()
+            self.save()     # If no file was read, it means that there isn't one and is therefore created.
         else:
             self.clean()
 
-        atexit.register(self.save)
+        atexit.register(self.save)  # Register the save method as a handler for when the script is exiting.
 
     def save(self):
         self.clean()
